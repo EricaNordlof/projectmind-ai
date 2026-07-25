@@ -129,10 +129,56 @@ SCHEMA = [
 ]
 
 
+def _table_columns(conn: Any, table_name: str) -> set[str]:
+    """Return existing columns for SQLite or PostgreSQL.
+
+    ProjectMind is upgraded in place on a persistent Render disk, so CREATE TABLE
+    IF NOT EXISTS is not enough when a prior release used a slightly different
+    cache schema.
+    """
+    if settings.using_postgres:
+        rows = conn.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = current_schema() AND table_name = %s
+            """,
+            (table_name,),
+        ).fetchall()
+        return {
+            str(row["column_name"] if isinstance(row, dict) else row[0])
+            for row in rows
+        }
+
+    rows = conn.execute(f'PRAGMA table_info("{table_name}")').fetchall()
+    return {str(row["name"] if hasattr(row, "keys") else row[1]) for row in rows}
+
+
+def _migrate_schema(conn: Any) -> None:
+    """Apply small, idempotent migrations for databases from older builds."""
+    cache_columns = _table_columns(conn, "document_text_cache")
+
+    # The first document-aware preview called this field page_count. The full
+    # release renamed it locator_count because Excel sheets and PowerPoint slides
+    # are also locators. Existing Render disks must be upgraded instead of wiped.
+    if cache_columns and "locator_count" not in cache_columns:
+        conn.execute(
+            "ALTER TABLE document_text_cache "
+            "ADD COLUMN locator_count INTEGER NOT NULL DEFAULT 0"
+        )
+        if "page_count" in cache_columns:
+            conn.execute(
+                "UPDATE document_text_cache "
+                "SET locator_count = page_count "
+                "WHERE locator_count = 0"
+            )
+
+
 def init_db() -> None:
     with connection() as conn:
         for statement in SCHEMA:
             conn.execute(sql(statement))
+        _migrate_schema(conn)
 
 
 def fetchone(statement: str, params: tuple[Any, ...] = ()) -> dict[str, Any] | None:
