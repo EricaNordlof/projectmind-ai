@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Logga in – {{ app_name }}{% endblock %}
+{% block body_class %}login-body{% endblock %}
+{% block content %}
+<section class="login-card">
+  <div class="brand login-brand">
+    <span class="brand-mark">PM</span>
+    <span><strong>{{ app_name }}</strong><small>Privat AI-arbetsyta</small></span>
+  </div>
+  <h1>Logga in</h1>
+  <p class="muted">Projekt, dokument och chattar är skyddade med ett administratörslösenord.</p>
+  {% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" class="stack-form">
+    <label>Lösenord<input type="password" name="password" required autofocus autocomplete="current-password"></label>
+    <button class="button primary" type="submit">Öppna ProjectMind</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} – {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header split-header">
+  <div><span class="eyebrow">Projekt</span><h1>{{ project.name }}</h1><p>{{ project.description or 'Ingen beskrivning ännu.' }}</p></div>
+  <form method="post" action="/chats" class="inline-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="title" value="{{ project.name }} – AI-chatt">
+    <button class="button primary" type="submit">Öppna AI-chatt</button>
+  </form>
+</header>
+
+<div class="two-column-layout">
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Inställningar</span><h2>Projektinformation</h2></div></div>
+    <form method="post" action="/projects/{{ project.id }}/update" class="stack-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>Namn<input name="name" value="{{ project.name }}" required maxlength="120"></label>
+      <label>Beskrivning<textarea name="description" rows="3">{{ project.description }}</textarea></label>
+      <div class="form-grid"><label>Status<select name="status"><option value="active" {% if project.status == 'active' %}selected{% endif %}>Aktivt</option><option value="paused" {% if project.status == 'paused' %}selected{% endif %}>Pausat</option><option value="done" {% if project.status == 'done' %}selected{% endif %}>Klart</option></select></label><label>Stack/ämne<input name="stack" value="{{ project.stack }}"></label></div>
+      <label>Anteckningar<textarea name="notes" rows="6" placeholder="Bestående projektkontext för AI:n">{{ project.notes }}</textarea></label>
+      <button class="button secondary" type="submit">Spara projekt</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">AI</span><h2>Projektchattar</h2></div></div>
+    <form method="post" action="/chats" class="stack-form compact-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="project_id" value="{{ project.id }}">
+      <label>Ny chatt<input name="title" value="{{ project.name }} – AI-chatt" maxlength="120"></label>
+      <button class="button primary" type="submit">Skapa chatt</button>
+    </form>
+    <div class="mini-list">
+      {% for chat in chats %}<a href="/chats/{{ chat.id }}"><span><strong>{{ chat.title }}</strong><small>{{ chat.updated_at|date }}</small></span><span>→</span></a>{% else %}<p class="muted">Inga projektchattar ännu.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="section-block" id="files">
+  <div class="section-title split-header"><div><span class="eyebrow">Kunskapsbas</span><h2>Dokument och filer</h2><p>PDF, Word, Excel, PowerPoint och textfiler indexeras med källmarkörer.</p></div>
+    <form method="post" action="/projects/{{ project.id }}/reindex"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button ghost" type="submit">Indexera om alla</button></form>
+  </div>
+  <article class="panel upload-panel">
+    <form method="post" action="/projects/{{ project.id }}/files" enctype="multipart/form-data" class="upload-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="file-drop"><input type="file" name="upload" required><span><strong>Välj en fil</strong><small>Max {{ max_upload_mb }} MB. Textstödda typer: {{ supported_extensions }}</small></span></label>
+      <button class="button primary" type="submit">Ladda upp och indexera</button>
+    </form>
+  </article>
+  <div class="list-panel">
+    {% for file in files %}
+    <div class="file-row">
+      <div class="file-icon">{{ file.original_name.split('.')[-1]|upper }}</div>
+      <div class="file-main"><strong>{{ file.original_name }}</strong><small>{{ file.size_bytes|filesize }} · {{ file.created_at|date }}</small>
+        {% if file.indexed %}{% if file.extraction_error %}<span class="index-status warn">{{ file.extraction_error }}</span>{% else %}<span class="index-status ok">Indexerad · {{ file.locator_count }} källavsnitt</span>{% endif %}{% else %}<span class="index-status">Inte indexerad ännu</span>{% endif %}
+      </div>
+      <div class="row-actions"><a class="button ghost small-button" href="/files/{{ file.id }}/download">Hämta</a><form method="post" action="/files/{{ file.id }}/reindex"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button ghost small-button" type="submit">Indexera om</button></form><form method="post" action="/files/{{ file.id }}/delete" data-confirm="Ta bort filen permanent?"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button danger-text small-button" type="submit">Ta bort</button></form></div>
+    </div>
+    {% else %}<div class="empty-state compact"><p>Inga filer uppladdade ännu.</p></div>{% endfor %}
+  </div>
+</section>
+
+<section class="section-block" id="versions">
+  <div class="section-title"><div><span class="eyebrow">Arkiv</span><h2>ZIP-versioner</h2><p>Spara hela projektversioner separat från kunskapsbasen.</p></div></div>
+  <article class="panel">
+    <form method="post" action="/projects/{{ project.id }}/versions" enctype="multipart/form-data" class="form-grid version-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>Versionsnamn<input name="version_label" required placeholder="v2.1"></label><label>Kommentar<input name="comment" placeholder="Vad ändrades?"></label><label class="wide">ZIP-fil<input type="file" name="upload" accept=".zip" required></label><div class="wide"><button class="button secondary" type="submit">Spara version</button></div>
+    </form>
+  </article>
+  <div class="list-panel">
+    {% for version in versions %}<div class="file-row"><div class="file-icon">ZIP</div><div class="file-main"><strong>{{ version.version_label }} · {{ version.original_name }}</strong><small>{{ version.size_bytes|filesize }} · {{ version.created_at|date }}</small><span class="muted small">{{ version.comment }}</span></div><div class="row-actions"><a class="button ghost small-button" href="/versions/{{ version.id }}/download">Hämta</a><form method="post" action="/versions/{{ version.id }}/delete" data-confirm="Ta bort versionen permanent?"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button danger-text small-button" type="submit">Ta bort</button></form></div></div>{% else %}<div class="empty-state compact"><p>Inga ZIP-versioner ännu.</p></div>{% endfor %}
+  </div>
+</section>
+
+<section class="danger-zone"><div><h2>Ta bort projekt</h2><p>Projekt, chattar, dokument och versioner tas bort permanent.</p></div><form method="post" action="/projects/{{ project.id }}/delete" data-confirm="Ta bort hela projektet permanent?"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="button danger" type="submit">Ta bort projektet</button></form></section>
+{% endblock %}

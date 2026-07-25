@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% if is_admin %}
+  <button class="mobile-menu" type="button" data-menu-toggle aria-label="Öppna meny">☰</button>
+  <aside class="sidebar" data-sidebar>
+    <a class="brand" href="/">
+      <span class="brand-mark">PM</span>
+      <span><strong>{{ app_name }}</strong><small>Privat AI-arbetsyta</small></span>
+    </a>
+
+    <nav class="side-nav">
+      <a href="/" class="nav-link">Översikt</a>
+      <div class="nav-heading">Projekt</div>
+      {% for item in nav_projects %}
+      <a href="/projects/{{ item.id }}" class="nav-link nav-project">
+        <span>{{ item.name }}</span><small>{{ item.status }}</small>
+      </a>
+      {% else %}
+      <span class="nav-empty">Inga projekt ännu</span>
+      {% endfor %}
+      <div class="nav-heading">Senaste chattar</div>
+      {% for item in nav_chats %}
+      <a href="/chats/{{ item.id }}" class="nav-link nav-project">
+        <span>{{ item.title }}</span><small>{{ item.project_name or 'Fristående' }}</small>
+      </a>
+      {% else %}
+      <span class="nav-empty">Inga chattar ännu</span>
+      {% endfor %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="storage-indicator {{ 'ok' if persistence_ok else 'warn' }}">
+        <span class="status-dot"></span>
+        <span><strong>{{ persistence_title }}</strong><small>{{ persistence_message }}</small></span>
+      </div>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="button ghost full" type="submit">Logga ut</button>
+      </form>
+    </div>
+  </aside>
+  {% endif %}
+
+  <main class="main-shell {% if not is_admin %}main-shell-plain{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: projectmind-ai
+    runtime: docker
+    plan: starter
+    rootDir: ProjectMind_AI_Erica_Nordlof
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    disk:
+      name: projectmind-data
+      mountPath: /app/storage
+      sizeGB: 5
+    envVars:
+      - key: APP_NAME
+        value: ProjectMind AI
+      - key: APP_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SESSION_SECURE
+        value: "true"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6-sol
+      - key: OPENAI_REASONING_EFFORT
+        value: max
+      - key: OPENAI_MAX_OUTPUT_TOKENS
+        value: "8000"
+      - key: DATA_DIR
+        value: /app/storage
+      - key: STORAGE_BACKEND
+        value: local
+      - key: PERSISTENT_DISK
+        value: "true"
+      - key: MAX_UPLOAD_MB
+        value: "100"
+      - key: MAX_CHAT_IMAGE_MB
+        value: "12"
+      - key: MAX_CHAT_IMAGES
+        value: "4"
+      - key: SMART_CONTEXT_MAX_CHARS
+        value: "180000"
+      - key: SMART_MAX_FILE_CHARS
+        value: "120000"
+      - key: SMART_HISTORY_MESSAGES
+        value: "40"

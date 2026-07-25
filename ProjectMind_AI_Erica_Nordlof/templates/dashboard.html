@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Översikt – {{ app_name }}{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><span class="eyebrow">Arbetsyta</span><h1>Projektöversikt</h1><p>Samla dokument, versioner och AI-chattar per projekt.</p></div>
+</header>
+
+{% if not persistence_ok %}
+<div class="alert warning"><strong>{{ persistence_title }}</strong><br>{{ persistence_message }}</div>
+{% endif %}
+
+<section class="dashboard-grid">
+  <article class="panel create-panel">
+    <div class="panel-heading"><div><span class="eyebrow">Nytt</span><h2>Skapa projekt</h2></div></div>
+    <form method="post" action="/projects" class="stack-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>Projektnamn<input name="name" required maxlength="120" placeholder="Exempel: Mjukvarutestare EC YH Malmö"></label>
+      <label>Beskrivning<textarea name="description" rows="3" placeholder="Vad ska projektet användas till?"></textarea></label>
+      <label>Stack eller ämne<input name="stack" placeholder="Exempel: Studier, PDF, Java, testautomation"></label>
+      <button class="button primary" type="submit">Skapa projekt</button>
+    </form>
+  </article>
+
+  <article class="panel">
+    <div class="panel-heading"><div><span class="eyebrow">Snabbstart</span><h2>Ny fristående chatt</h2></div></div>
+    <form method="post" action="/chats" class="stack-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="project_id" value="">
+      <label>Rubrik<input name="title" value="Ny chatt" maxlength="120"></label>
+      <button class="button secondary" type="submit">Öppna chatt</button>
+    </form>
+  </article>
+</section>
+
+<section class="section-block">
+  <div class="section-title"><div><span class="eyebrow">Projekt</span><h2>Dina arbetsytor</h2></div><span class="counter">{{ projects|length }}</span></div>
+  <div class="card-grid">
+    {% for project in projects %}
+    <a class="project-card" href="/projects/{{ project.id }}">
+      <div class="card-top"><span class="badge">{{ project.status }}</span><span class="muted small">{{ project.updated_at|date }}</span></div>
+      <h3>{{ project.name }}</h3>
+      <p>{{ project.description or 'Ingen beskrivning ännu.' }}</p>
+      <div class="metric-row"><span>{{ project.file_count }} filer</span><span>{{ project.version_count }} versioner</span><span>{{ project.chat_count }} chattar</span></div>
+    </a>
+    {% else %}
+    <div class="empty-state"><h3>Inga projekt ännu</h3><p>Skapa det första projektet ovan.</p></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section-block">
+  <div class="section-title"><div><span class="eyebrow">Historik</span><h2>Senaste chattar</h2></div></div>
+  <div class="list-panel">
+    {% for chat in chats %}
+    <a class="list-row" href="/chats/{{ chat.id }}"><span><strong>{{ chat.title }}</strong><small>{{ chat.project_name or 'Fristående chatt' }}</small></span><time>{{ chat.updated_at|date }}</time></a>
+    {% else %}
+    <div class="empty-state compact"><p>Inga chattar ännu.</p></div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

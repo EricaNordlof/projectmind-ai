@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Fel {{ status_code }} – {{ app_name }}{% endblock %}
+{% block content %}<section class="error-card"><span class="eyebrow">Fel {{ status_code }}</span><h1>Något gick fel</h1><p>{{ error_message }}</p><a class="button primary" href="/">Till översikten</a></section>{% endblock %}
