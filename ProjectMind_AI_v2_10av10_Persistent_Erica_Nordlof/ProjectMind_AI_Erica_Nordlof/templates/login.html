@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Logga in · {{ app_name }}{% endblock %}
+{% block main_class %}login-shell{% endblock %}
+{% block content %}
+<section class="login-card">
+  <div class="logo large">PM</div>
+  <p class="eyebrow">PRIVAT AI-ARBETSYTA</p>
+  <h1>ProjectMind AI</h1>
+  <p class="muted">Dina projekt, ZIP-versioner, filer och AI-chattar på ett ställe.</p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" class="stack">
+    <label>Adminlösenord<input type="password" name="password" required autofocus></label>
+    <button class="primary" type="submit">Logga in</button>
+  </form>
+</section>
+{% endblock %}

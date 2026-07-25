@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ chat.title }} · {{ app_name }}{% endblock %}
+{% block main_class %}chat-shell{% endblock %}
+{% block content %}
+<aside class="chat-sidebar">
+  <a class="back" href="/">← Projekt</a>
+  <p class="eyebrow">AI-CHATT</p>
+  <h2>{{ chat.title }}</h2>
+  <p class="muted">{{ project.name if project else "Fristående chatt" }}</p>
+
+  <details>
+    <summary>Chattinställningar</summary>
+    <form method="post" action="/chats/{{ chat.id }}/rename" class="stack compact">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>Rubrik<input name="title" value="{{ chat.title }}"></label>
+      <label>Projekt
+        <select name="project_id">
+          <option value="">Fristående</option>
+          {% for item in projects %}
+          <option value="{{ item.id }}" {% if chat.project_id == item.id %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="secondary" type="submit">Spara</button>
+    </form>
+  </details>
+
+  <form method="post" action="/chats/{{ chat.id }}/delete" data-confirm="Radera chatten?">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="ghost danger-text" type="submit">Radera chatt</button>
+  </form>
+</aside>
+
+<section class="conversation">
+  <div class="conversation-head">
+    <div>
+      <span class="status">ProjectMind AI</span>
+      <h1>{{ chat.title }}</h1>
+    </div>
+    {% if project %}
+    <a class="secondary" href="/projects/{{ project.id }}">Öppna {{ project.name }}</a>
+    {% endif %}
+  </div>
+
+  <div class="messages">
+    {% for message in messages %}
+    <article class="message {{ message.role }}">
+      <div class="message-role">{{ "Du" if message.role == "user" else "ProjectMind" }}</div>
+
+      {% set message_images = attachments_by_message.get(message.id, []) %}
+      {% if message_images %}
+      <div class="message-images">
+        {% for image in message_images %}
+        <a href="/chat-images/{{ image.id }}" target="_blank" rel="noopener">
+          <img src="/chat-images/{{ image.id }}" alt="{{ image.original_name }}">
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <pre>{{ message.content }}</pre>
+
+      {% if message.role == "assistant" %}
+      <button class="copy-button" type="button" data-copy-text="{{ message.content|e }}">Kopiera</button>
+      {% endif %}
+    </article>
+    {% else %}
+    <div class="empty-chat">
+      <h2>Vad arbetar vi med?</h2>
+      <p>
+        {% if project %}
+        Chatten känner till projektets metadata, filer och versionslista.
+        {% else %}
+        Starta en fristående konversation.
+        {% endif %}
+      </p>
+      <p class="muted">Du kan dra in, klistra in eller välja skärmbilder.</p>
+    </div>
+    {% endfor %}
+    <div id="latest"></div>
+  </div>
+
+  <form
+    method="post"
+    action="/chats/{{ chat.id }}/message"
+    class="composer"
+    enctype="multipart/form-data"
+    data-chat-composer
+    data-max-images="{{ max_chat_images }}"
+    data-max-image-mb="{{ max_chat_image_mb }}"
+  >
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+
+    <div class="attachment-preview" data-attachment-preview hidden></div>
+
+    <div class="composer-box" data-drop-zone>
+      <label class="attach-button" title="Bifoga skärmbild">
+        <span aria-hidden="true">＋</span>
+        <span class="sr-only">Bifoga bild</span>
+        <input
+          type="file"
+          name="images"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          multiple
+          data-chat-images
+          hidden
+        >
+      </label>
+
+      <textarea
+        name="content"
+        rows="3"
+        placeholder="Skriv till ProjectMind AI… Dra eller klistra in en skärmbild här."
+        data-autogrow
+      ></textarea>
+    </div>
+
+    <div class="composer-actions">
+      <small class="composer-hint">
+        PNG, JPG, WEBP eller GIF · max {{ max_chat_images }} bilder · {{ max_chat_image_mb }} MB/bild
+      </small>
+      <button class="primary" type="submit">Skicka</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
